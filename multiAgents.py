@@ -166,8 +166,75 @@ class MinimaxAgent(MultiAgentSearchAgent):
         gameState.isLose():
         Returns whether or not the game state is a losing state
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+
+        self.num_agents = gameState.getNumAgents()
+        self.ghosts = []
+        for i in range(self.num_agents-1):
+            self.ghosts.append(i+1)
+
+        depth = 0
+        best_action = 0
+        best_value = float('-inf')
+
+        # all the legal actions pacman can currently take
+        pacman_actions = gameState.getLegalActions(0)
+        for action in pacman_actions:
+            pacman_future = gameState.generateSuccessor(0, action)
+            value = self.Minimize_Action(pacman_future, self.ghosts[0], depth)
+            if value > best_value:
+                best_value = value
+                best_action = action
+
+        return best_action
+
+    def Maximize_Action(self, gameState, depth):
+        pacman_actions = gameState.getLegalActions(0)
+
+        if depth == self.depth:
+            return self.evaluationFunction(gameState)
+
+        if not pacman_actions:
+            return self.evaluationFunction(gameState)
+
+        values = []
+        for action in pacman_actions:
+            pacman_future = gameState.generateSuccessor(0, action)
+            values.append(self.Minimize_Action(pacman_future, self.ghosts[0], depth))
+
+        return max(values)
+
+    def Minimize_Action(self, gameState, ghost_ID, depth):
+
+        """ For the MIN Players or Agents  """
+
+        # gets the legal actions for ghost
+        ghost_actions = gameState.getLegalActions(ghost_ID)
+
+        if depth == self.depth:
+            return self.evaluationFunction(gameState)
+
+        if not ghost_actions:
+            return self.evaluationFunction(gameState)
+
+        min_reward = float('inf')
+        values = []
+
+        if ghost_ID < gameState.getNumAgents()-1:
+            for action in ghost_actions:
+                # future caused by ghost taking its action
+                ghost_future = gameState.generateSuccessor(ghost_ID, action)
+                # every action of ghost X needs to be evaluated by ghost X+1
+                # until run out of ghosts
+                values.append(self.Minimize_Action(ghost_future, ghost_ID + 1, depth))
+        else:
+            for action in ghost_actions:
+                ghost_future = gameState.generateSuccessor(ghost_ID, action)
+                values.append(self.Maximize_Action(ghost_future, depth + 1))
+
+        if not values:
+            return min_reward
+        else:
+            return min(values)
 
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
