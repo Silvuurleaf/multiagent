@@ -86,6 +86,7 @@ class ReflexAgent(Agent):
 
         pacX, pacY = pacman_position
         if currentFood[pacX][pacY]:
+            print(currentFood[pacX][pacY])
             score += 1
 
         food_distances = {}
@@ -458,38 +459,23 @@ def betterEvaluationFunction(currentGameState):
     ghost_states = currentGameState.getGhostStates()
     capsules_list = currentGameState.getCapsules()
 
-    # ate food
-    """
-    if len(food_list) > 15:
-        score -= len(food_list)
-    elif len(food_list) < 15:
-        score -= len(food_list)*1.35
-    else:
-        score -= len(food_list)*1.65
-    """
 
-    # score -= currentGameState.getNumFood()
-
-    # score -= food_avaliable
-
-
-
+    # Checks if the gameState will result in losing
     if currentGameState.isLose():
         return float('-inf')
 
+    # Checks if the gameState will result in wining
     if currentGameState.isWin():
         return float('inf')
 
+    """
+        Not sure why this could isn't working
+        Is able to pass without it though.
+        
     pacX, pacY = pacman_position
-    #print("PAC X{} Y{}".format(pacX, pacY))
-    #print("CURRENT FOOD {}".format(pacX, pacY))
     if currentFood[pacX][pacY]:
-        print("FUCKIN HELLO")
         score += 1
-    else:
-        pass
-        #print('FOOD: {}'.format(currentFood))
-
+    """
     # distance from ghosts
     for ghost in ghost_states:
         ghost_distance = manhattanDistance(pacman_position, ghost.getPosition())
