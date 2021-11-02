@@ -78,15 +78,16 @@ class ReflexAgent(Agent):
 
         score = 0
 
+        # Check if the next state is winning/losing
         if successorGameState.isWin():
             return float('inf')
         if successorGameState.isLose():
             return float('-inf')
 
-
+        # checks to see if pacman ate some food
         pacX, pacY = pacman_position
         if currentFood[pacX][pacY]:
-            print(currentFood[pacX][pacY])
+            #print(currentFood[pacX][pacY])
             score += 1
 
         food_distances = {}
@@ -103,19 +104,20 @@ class ReflexAgent(Agent):
                     score += 1 / food_distances[closest_food]
                     food_list.remove(closest_food)
 
-        # distance from ghosts
+        # distance from ghost
         if ghost_states:
             for ghost in ghost_states:
                 ghost_distance = manhattanDistance(pacman_position,
                                                    ghost.getPosition())
+
+                # if ghost is close return large negative value
                 if ghost_distance <= 1:
                     return float('-inf')
 
+                # otherwise subtract the inverse (closer -> larger negative)
                 score -= 1 / ghost_distance
 
         return score
-
-        # return successorGameState.getScore()
 
 
 def scoreEvaluationFunction(currentGameState):
@@ -243,15 +245,18 @@ class MinimaxAgent(MultiAgentSearchAgent):
         # gets the legal actions for ghost
         ghost_actions = gameState.getLegalActions(ghost_ID)
 
+        # see if we have reached the depth limit, return value of state
         if depth == self.depth:
             return self.evaluationFunction(gameState)
 
+        # if there are not actions left return value of state
         if not ghost_actions:
             return self.evaluationFunction(gameState)
 
         min_reward = float('inf')
         values = []
 
+        # check we aren't the last ghost
         if ghost_ID < gameState.getNumAgents() - 1:
             for action in ghost_actions:
                 # future caused by ghost taking its action
@@ -261,10 +266,12 @@ class MinimaxAgent(MultiAgentSearchAgent):
                 values.append(
                     self.Minimize_Action(ghost_future, ghost_ID + 1, depth))
         else:
+            # last ghost need to call maximize afterwards
             for action in ghost_actions:
                 ghost_future = gameState.generateSuccessor(ghost_ID, action)
                 values.append(self.Maximize_Action(ghost_future, depth + 1))
 
+        # make sure not empty list we are calling min on
         if not values:
             return min_reward
         else:
@@ -281,6 +288,7 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         Returns the minimax action using self.depth and self.evaluationFunction
         """
 
+        # default values for alpha/beta pruning
         beta = float('inf')
         alpha = float('-inf')
 
@@ -291,19 +299,22 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
 
         depth = 0
         best_action = 0
-        best_value = float('-inf')
 
         # all the legal actions pacman can currently take
         pacman_actions = gameState.getLegalActions(0)
         for action in pacman_actions:
+            # create future state
             pacman_future = gameState.generateSuccessor(0, action)
+            # call minimize
             value = self.Minimize_Action(pacman_future, self.ghosts[0], depth,
                                          alpha,
                                          beta)
 
+            # if alpha > beta -> prune, just return current action
             if alpha > beta:
                 return action
 
+            # otherwise acts like a max node, reassign alpha
             if value > alpha:
                 alpha = value
                 best_action = action
@@ -311,15 +322,21 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         return best_action
 
     def Maximize_Action(self, gameState, depth, alpha, beta):
+        """
+            Max node for alpha beta pruning
+        """
         pacman_actions = gameState.getLegalActions(0)
 
+        # see if we have reached the depth limit, return value of state
         if depth == self.depth:
             return self.evaluationFunction(gameState)
 
+        # if no actions left return currents tate value
         if not pacman_actions:
             return self.evaluationFunction(gameState)
 
         value = float('-inf')
+        # for every action call min node on it, pass alpha, beta values
         for action in pacman_actions:
             pacman_future = gameState.generateSuccessor(0, action)
             value = max(
@@ -327,8 +344,10 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
                                      alpha,
                                      beta), value)
 
+            # max node need to choose the largest value for alpha
             alpha = max(alpha, value)
 
+            # if alpha > beta -> prune
             if alpha > beta:
                 return value
 
@@ -461,6 +480,8 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
         if not values:
             return 0
         else:
+            # since expectimax is uniform we can take the sum and divide
+            # by the number of actions
             return sum(values) / len(ghost_actions)
 
 
@@ -489,13 +510,17 @@ def betterEvaluationFunction(currentGameState):
         return float('inf')
 
     """
-        Not sure why this could isn't working
+        Not sure why this code isn't working
         Is able to pass without it though.
+        
+        Was a modifier to see if pacman ate food at 
+        his given location
         
     pacX, pacY = pacman_position
     if currentFood[pacX][pacY]:
         score += 1
     """
+
     # distance from ghosts
     for ghost in ghost_states:
         ghost_distance = manhattanDistance(pacman_position, ghost.getPosition())
@@ -503,6 +528,14 @@ def betterEvaluationFunction(currentGameState):
             return float('-inf')
 
         score -= 1 / ghost_distance
+
+
+    # handles food distances, while there is food avaliable find the distance
+    # from pacman to all of the food and find the one closest to us
+
+    # then we check if ghosts are scared of us if they are add bonus points
+    # to encourage pacman to eat food and not be scared of the ghosts
+    # if they aren't scared the modifier is less.
 
     food_distances = {}
     if food_list:
@@ -513,11 +546,16 @@ def betterEvaluationFunction(currentGameState):
         for ghost in ghost_states:
             if ghost.scaredTimer > 0:
                 score += 3 / food_distances[closest_food]
+
+                # once food is grabbed remove from the list
                 food_list.remove(closest_food)
             else:
                 score += 1 / food_distances[closest_food]
+                # once food is grabbed remove from the list
                 food_list.remove(closest_food)
 
+    # while there are still capsules left subtract a small number
+    # value was found via iteration
     if capsules_list:
         score -= .18*len(capsules_list)
 
