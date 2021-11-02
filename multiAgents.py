@@ -179,20 +179,29 @@ class MinimaxAgent(MultiAgentSearchAgent):
         Returns whether or not the game state is a losing state
         """
 
+        # Total number of agents (including pacman)
         self.num_agents = gameState.getNumAgents()
+
+        # create a list with the ID of all of the ghosts
         self.ghosts = []
         for i in range(self.num_agents - 1):
             self.ghosts.append(i + 1)
 
-        depth = 0
-        best_action = 0
-        best_value = float('-inf')
+        depth = 0                   # current depth
+        best_action = None          # best course of action
+        best_value = float('-inf')  # score for an evaluated action
 
         # all the legal actions pacman can currently take
         pacman_actions = gameState.getLegalActions(0)
+
+        # Iterate through all of possible actions
         for action in pacman_actions:
+            # future game state after pacman action taken
             pacman_future = gameState.generateSuccessor(0, action)
+            # return from applying min node for a ghost agent on pacman actions
             value = self.Minimize_Action(pacman_future, self.ghosts[0], depth)
+
+            # Pacman takes the best value, cause its a max node
             if value > best_value:
                 best_value = value
                 best_action = action
@@ -200,20 +209,31 @@ class MinimaxAgent(MultiAgentSearchAgent):
         return best_action
 
     def Maximize_Action(self, gameState, depth):
+        """
+            Apply max node implementation
+        """
+
+        # Legal pacman actions
         pacman_actions = gameState.getLegalActions(0)
 
+        # see if we have reached the depth limit, return value of state
         if depth == self.depth:
             return self.evaluationFunction(gameState)
 
+        # if there are not actions left return value of state
         if not pacman_actions:
             return self.evaluationFunction(gameState)
 
+        # store values for each node for a given pacman action
         values = []
         for action in pacman_actions:
             pacman_future = gameState.generateSuccessor(0, action)
+            # for a given gamestate min value for each
+            # state resulting from said action
             values.append(
                 self.Minimize_Action(pacman_future, self.ghosts[0], depth))
 
+        # for all the nodes return the largest value
         return max(values)
 
     def Minimize_Action(self, gameState, ghost_ID, depth):
